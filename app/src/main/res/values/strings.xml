@@ -19,5 +19,4 @@
     <string name="success_message">Tu perfil ha sido configurado exitosamente</string>
     <string name="get_started">Comenzar</string>
     <string name="default_web_client_id">843175457681-72igoc2hfp7u4kkccqptul6uk3p47s1a.apps.googleusercontent.com</string>
-    <string name="openai_api_key">${OPENAI_API_KEY}</string>
 </resources>
