@@ -5,27 +5,32 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,26 +40,21 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.william.yachay_hco.R
-import com.william.yachay_hco.ui.theme.BlueYachay
-import com.william.yachay_hco.ui.theme.CreamYachay
-import com.william.yachay_hco.ui.theme.GreenYachay
+import com.william.yachay_hco.ui.theme.*
 import com.william.yachay_hco.viewmodel.AuthResult
 import com.william.yachay_hco.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    navigateToHome: () -> Unit,
-    navigateToRegister: () -> Unit,
-    navigateToForgotPassword: () -> Unit
+    navigateToHome: (Boolean) -> Unit
 ) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-
+    var showSuccessScreen by remember { mutableStateOf(false) }
+    var userName by remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    // 🔥 SOLUCIÓN 1: Cerrar sesión previa y forzar selección de cuenta
     val googleSignInClient = remember {
         val webClientId = try {
             context.getString(R.string.default_web_client_id)
@@ -73,7 +73,6 @@ fun LoginScreen(
         GoogleSignIn.getClient(context, gso)
     }
 
-    // 🔥 SOLUCIÓN 2: Launcher mejorado con mejor manejo
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -83,6 +82,7 @@ fun LoginScreen(
                 try {
                     val account = task.getResult(ApiException::class.java)!!
                     val idToken = account.idToken
+                    userName = account.displayName ?: "Usuario" // Guardar nombre para mostrar
                     if (idToken != null) {
                         isLoading = true
                         viewModel.signInWithGoogle(idToken)
@@ -114,12 +114,9 @@ fun LoginScreen(
         }
     }
 
-    // 🔥 SOLUCIÓN 3: Función para iniciar Google Sign-In con limpieza previa
     fun startGoogleSignIn() {
         try {
-            // Cerrar sesión previa para forzar selección de cuenta
             googleSignInClient.signOut().addOnCompleteListener {
-                // Crear intent de sign-in
                 val signInIntent = googleSignInClient.signInIntent
                 googleSignInLauncher.launch(signInIntent)
             }
@@ -129,28 +126,68 @@ fun LoginScreen(
         }
     }
 
-    // Escuchar los resultados de autenticación
     LaunchedEffect(viewModel.authResult) {
         viewModel.authResult.collect { result ->
-            isLoading = false
             when (result) {
-                is AuthResult.Success -> navigateToHome()
-                is AuthResult.Error -> Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                is AuthResult.Success -> {
+                    isLoading = false
+                    // Mostrar pantalla de éxito antes de navegar
+                    showSuccessScreen = true
+                    // Esperar 2 segundos y luego navegar
+                    delay(2000)
+                    navigateToHome(result.user.is_staff || result.user.is_superuser)
+                }
+                is AuthResult.Error -> {
+                    isLoading = false
+                    Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                }
                 else -> {}
             }
         }
     }
 
-    // UI
+    // Mostrar pantalla de éxito o pantalla de login normal
+    if (showSuccessScreen) {
+        LoginSuccessScreen(userName = userName)
+    } else {
+        LoginContent(
+            isLoading = isLoading,
+            onGoogleSignIn = { startGoogleSignIn() }
+        )
+    }
+}
+
+@Composable
+fun LoginContent(
+    isLoading: Boolean,
+    onGoogleSignIn: () -> Unit
+) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(BlueYachay, GreenYachay)
-                )
-            )
+        modifier = Modifier.fillMaxSize()
     ) {
+        // IMAGEN DE FONDO
+        Image(
+            painter = painterResource(R.drawable.background_login),
+            contentDescription = "Fondo de pantalla de login",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // Overlay sutil para mejorar legibilidad del contenido
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.1f),
+                            Color.Black.copy(alpha = 0.05f)
+                        )
+                    )
+                )
+        )
+
+        // Contenido principal
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -158,164 +195,247 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo y título
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_yachay_logo),
-                contentDescription = "Logo",
-                modifier = Modifier.size(80.dp),
-                tint = Color.White
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            // Logo y título con diseño moderno
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(BlueYachay, GreenYachay)
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_yachay_logo),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(60.dp),
+                    tint = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
-                text = "Bienvenido a YACHAY HCO",
+                text = "YACHAY HCO",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                letterSpacing = 1.sp
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "Te extrañamos, ¡vuelve a conectarte con nuestro patrimonio cultural!",
-                color = CreamYachay,
+                text = "Conecta con nuestro patrimonio cultural",
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(32.dp))
 
-            // Formulario
+            Spacer(modifier = Modifier.height(60.dp))
+
+            // Tarjeta principal con diseño limpio - SOLO GOOGLE
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.95f)
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 8.dp
+                )
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = "Iniciar Sesión",
-                        fontSize = 20.sp,
+                        text = "Bienvenido",
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = BlueYachay
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Usuario
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Usuario") },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = "Usuario")
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Contraseña
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Contraseña") },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = "Contraseña")
-                        },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                    )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Olvidé contraseña
-                    TextButton(
-                        onClick = navigateToForgotPassword,
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text("¿Olvidaste tu contraseña?")
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Inicia sesión para explorar nuestro patrimonio cultural",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
 
-                    // Botón de inicio de sesión
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // ÚNICO BOTÓN - GOOGLE
                     Button(
-                        onClick = {
-                            isLoading = true
-                            viewModel.login(username, password)
-                        },
+                        onClick = onGoogleSignIn,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        enabled = !isLoading,
+                            .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = BlueYachay,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White
-                            )
-                        } else {
-                            Text("Iniciar Sesión")
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Separador
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Divider(modifier = Modifier.weight(1f))
-                        Text(
-                            text = "o",
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            color = Color.Gray
-                        )
-                        Divider(modifier = Modifier.weight(1f))
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 🔥 BOTÓN DE GOOGLE MEJORADO
-                    OutlinedButton(
-                        onClick = {
-                            if (!isLoading) {
-                                isLoading = true
-                                startGoogleSignIn()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        border = BorderStroke(1.dp, Color.Gray),
-                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
                             contentColor = Color.Black
                         ),
-                        enabled = !isLoading
+                        border = BorderStroke(1.5.dp, Color(0xFFE0E0E0)),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !isLoading,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 2.dp
+                        )
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.Gray
+                                modifier = Modifier.size(24.dp),
+                                color = BlueYachay,
+                                strokeWidth = 2.dp
                             )
                         } else {
                             Icon(
                                 painter = painterResource(R.drawable.ic_google),
                                 contentDescription = "Google",
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.Unspecified
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Iniciar con Google")
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "Continuar con Google",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Registro
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text("¿No tienes cuenta? ")
-                        TextButton(onClick = navigateToRegister) {
-                            Text("Crear una")
-                        }
-                    }
+                    // Texto informativo
+                    Text(
+                        text = "Esta es la única forma de acceder a la aplicación",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Footer sutil
+            Text(
+                text = "Al continuar, aceptas nuestros términos y condiciones",
+                fontSize = 11.sp,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LoginSuccessScreen(userName: String) {
+    var scale by remember { mutableStateOf(0.8f) }
+    var opacity by remember { mutableStateOf(0f) }
+
+    // Animación de entrada
+    LaunchedEffect(Unit) {
+        scale = 1f
+        opacity = 1f
+    }
+
+    val scaleAnimation by animateFloatAsState(
+        targetValue = scale,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "scaleAnimation"
+    )
+
+    val opacityAnimation by animateFloatAsState(
+        targetValue = opacity,
+        animationSpec = tween(durationMillis = 800),
+        label = "opacityAnimation"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BlueYachay, GreenYachay)
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(32.dp)
+                .scale(scaleAnimation)
+                .alpha(opacityAnimation),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Icono de check animado
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = "Login exitoso",
+                modifier = Modifier
+                    .size(120.dp)
+                    .scale(scaleAnimation),
+                tint = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "¡Bienvenido!",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = if (userName.isNotEmpty()) "Hola, $userName" else "Inicio de sesión exitoso",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Tu sesión se ha iniciado correctamente",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // Loading indicator mientras espera para navegar
+            CircularProgressIndicator(
+                modifier = Modifier.size(40.dp),
+                color = Color.White,
+                strokeWidth = 3.dp
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Redirigiendo...",
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.william.yachay_hco.model
 
+
 data class CulturalItem(
     val id: Int? = null,
     val imagen: String?,                    // URL o base64 de la imagen
@@ -11,59 +12,47 @@ data class CulturalItem(
     val periodo_historico: String,
     val ubicacion: String,
     val significado: String,
-    val createdAt: String? = null,
-    val updatedAt: String? = null
+    val created_at: String? = null,
+    val updated_at: String? = null,
+    val created_by_id: String? = null,
 )
 
 enum class CulturalCategory(val displayName: String) {
     GASTRONOMIA("Gastronomía"),
     PATRIMONIO_ARQUEOLOGICO("Patrimonio Arqueológico"),
     FLORA_MEDICINAL("Flora Medicinal"),
-    LEYENDAS_Y_TRADICIONES("Leyendas y Tradiciones")
+    LEYENDAS_Y_TRADICIONES("Leyendas y Tradiciones"),
+    FESTIVIDADES("Festividades"),
+    DANZA("Danza"),
+    MUSICA("Música"),
+    VESTIMENTA("Vestimenta"),
+    ARTE_POPULAR("Arte Popular"),
+    NATURALEZA_CULTURAL("Naturaleza/Cultural"),
+    OTRO("Otro")
 }
 
-// Para la respuesta de OpenAI Vision
-data class OpenAIVisionRequest(
-    val model: String = "gpt-4.1",
-    val messages: List<OpenAIMessage>,
-    val max_tokens: Int = 1000
+// Response genérica del backend
+data class ApiResponse<T>(
+    val success: Boolean,
+    val message: String? = null,
+    val data: T
 )
 
-data class OpenAIMessage(
-    val role: String,
-    val content: List<OpenAIContent>
+data class CulturalAnalysisRequest(
+    val image: String, // Base64 encoded image
+    val location: String = "Huánuco, Perú"
 )
 
-data class OpenAIContent(
-    val type: String,
-    val text: String? = null,
-    val image_url: OpenAIImageUrl? = null
+
+// Agrega estas data classes en el mismo archivo o en un archivo de modelos
+data class CulturalItemResponse(
+    val success: Boolean,
+    val message: String?,
+    val data: CulturalItem?
 )
 
-data class OpenAIImageUrl(
-    val url: String
-)
-
-data class OpenAIVisionResponse(
-    val choices: List<OpenAIChoice>
-)
-
-data class OpenAIChoice(
-    val message: OpenAIResponseMessage
-)
-
-data class OpenAIResponseMessage(
-    val content: String
-)
-
-// Respuesta estructurada parseada
-data class CulturalAnalysisResult(
-    val titulo: String,
-    val categoria: String,
-    val confianza: Float,
-    val descripcion: String,
-    val contexto_cultural: String,
-    val periodo_historico: String,
-    val ubicacion: String,
-    val significado: String
+data class CulturalItemsResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val data: List<CulturalItem>
 )

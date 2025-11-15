@@ -1,9 +1,13 @@
 package com.william.yachay_hco.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.william.yachay_hco.model.CulturalCategory
 import com.william.yachay_hco.model.CulturalItem
 import com.william.yachay_hco.ui.screens.*
@@ -21,30 +25,39 @@ fun YachayNavigation(navController: NavHostController) {
         // Pantalla de login
         composable("auth") {
             LoginScreen(
-                navigateToHome = {
-                    navController.navigate("main") {
+                navigateToHome = { isAdmin ->
+                    navController.navigate("main?isAdmin=$isAdmin") {
                         popUpTo("auth") { inclusive = true }
                     }
                 },
-                navigateToRegister = {
-                    navController.navigate("register")
-                },
-                navigateToForgotPassword = {
-                    navController.navigate("forgotPassword")
-                }
             )
         }
 
         // Pantalla principal
-        composable("main") {
+        composable(
+            "main?isAdmin={isAdmin}",
+            arguments = listOf(navArgument("isAdmin") {
+                type = NavType.BoolType
+                defaultValue = false
+            })
+        ) { backStackEntry ->
+            val isAdmin = backStackEntry.arguments?.getBoolean("isAdmin") ?: false
             MainScreen(
                 onNavigateToCultural = { navController.navigate("cultural") },
                 onNavigateToProfile = { navController.navigate("profile") },
-                onLogout = {
-                    navController.navigate("auth") {
-                        popUpTo("main") { inclusive = true }
+                onNavigateToReports = {
+                    // CAMBIAR: Navegar según el rol
+                    if (isAdmin) {
+                        navController.navigate("admin_reports")
+                    } else {
+                        navController.navigate("reports")
                     }
-                }
+                },
+                onNavigateToDetail = { id ->
+                    Log.d("MainScreen", "Navegando a detalle con ID: $id")
+                    navController.navigate("cultural_detail/$id")
+                },
+                isAdmin = isAdmin
             )
         }
 
@@ -54,7 +67,6 @@ fun YachayNavigation(navController: NavHostController) {
                 onNavigateToDetail = { itemId ->
                     navController.navigate("cultural_detail/$itemId")
                 },
-                onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = {
                     navController.navigate("main") {
                         popUpTo("cultural") { inclusive = false }
@@ -69,10 +81,13 @@ fun YachayNavigation(navController: NavHostController) {
         }
 
         // Pantalla de detalles culturales
-        composable("cultural_detail/{itemId}") { backStackEntry ->
-            val itemId = backStackEntry.arguments?.getString("itemId")?.toIntOrNull()
+        composable(
+            route = "cultural_detail/{itemId}",
+            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
             CulturalDetailScreen(
-                culturalItem = createMockCulturalItem(), // Reemplazar con datos reales
+                itemId = itemId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -93,24 +108,28 @@ fun YachayNavigation(navController: NavHostController) {
             ProfileScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate("editProfile") },
-                onNavigateToStats = { navController.navigate("profileStats") }
+                onNavigateToStats = { navController.navigate("profileStats") },
+                onLogout = {
+                    navController.navigate("auth") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Pantalla de reportes
+        composable("reports") {
+            ReportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 🔹 Nueva pantalla de reportes de administrador
+        composable("admin_reports") {
+            AdminReportScreen(
+                viewModel = hiltViewModel(),
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
 }
-
-// Función temporal para crear un item mock
-private fun createMockCulturalItem() = CulturalItem(
-    id = 1,
-    titulo = "Pachamanca Huanuqueña",
-    categoria = CulturalCategory.GASTRONOMIA,
-    confianza = 0.92f,
-    descripcion = "La pachamanca es un plato tradicional que consiste en carnes y verduras cocidas bajo tierra con piedras calientes. Es una técnica ancestral que se ha transmitido de generación en generación.",
-    contexto_cultural = "La pachamanca es más que un plato; es un ritual que fortalece los vínculos comunitarios y familiares. Se prepara en ocasiones especiales y celebraciones importantes.",
-    periodo_historico = "Época preinca - actualidad",
-    ubicacion = "Toda la región de Huánuco, especialmente en zonas rurales",
-    significado = "Representa la conexión con la Pachamama (Madre Tierra) y simboliza la unión de la comunidad en torno a la alimentación.",
-    imagen = "",
-    createdAt = "",
-    updatedAt = "",
-)

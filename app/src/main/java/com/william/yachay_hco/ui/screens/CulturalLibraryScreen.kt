@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +29,6 @@ import coil.compose.AsyncImage
 import com.william.yachay_hco.model.CulturalCategory
 import com.william.yachay_hco.model.CulturalItem
 import com.william.yachay_hco.ui.theme.*
-import com.william.yachay_hco.view.compose.profile.StatItem
 import com.william.yachay_hco.viewmodel.CulturalViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -284,6 +284,41 @@ fun LibraryStats(
 }
 
 @Composable
+fun StatItem(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    color: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(horizontal = 8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 fun LibraryItemCard(
     culturalItem: CulturalItem,
     onClick: () -> Unit,
@@ -319,15 +354,6 @@ fun LibraryItemCard(
                         )
                     } else {
 
-                    }
-
-                    // Badge de confianza
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                    ) {
-                        ConfidenceIndicator(confidence = culturalItem.confianza)
                     }
                 }
 
@@ -406,8 +432,6 @@ fun LibraryItemCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-
-                        ConfidenceIndicator(confidence = culturalItem.confianza)
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -500,9 +524,16 @@ fun EmptyLibraryState(
 
 fun getCategoryColor(category: CulturalCategory): Color {
     return when (category) {
-        CulturalCategory.GASTRONOMIA -> Color(0xFFFF7043)
-        CulturalCategory.PATRIMONIO_ARQUEOLOGICO -> Color(0xFF8D6E63)
-        CulturalCategory.FLORA_MEDICINAL -> Color(0xFF66BB6A)
-        CulturalCategory.LEYENDAS_Y_TRADICIONES -> Color(0xFF42A5F5)
+        CulturalCategory.GASTRONOMIA -> Color(0xFFFF7043)              // Naranja cálido
+        CulturalCategory.PATRIMONIO_ARQUEOLOGICO -> Color(0xFF8D6E63)  // Marrón piedra
+        CulturalCategory.FLORA_MEDICINAL -> Color(0xFF66BB6A)          // Verde medicinal
+        CulturalCategory.LEYENDAS_Y_TRADICIONES -> Color(0xFF42A5F5)   // Azul narrativo
+        CulturalCategory.FESTIVIDADES -> Color(0xFFFFC107)             // Amarillo festivo
+        CulturalCategory.DANZA -> Color(0xFFE91E63)                    // Rosa vibrante
+        CulturalCategory.MUSICA -> Color(0xFFAB47BC)                   // Morado melódico
+        CulturalCategory.VESTIMENTA -> Color(0xFF5C6BC0)               // Azul índigo (ropa)
+        CulturalCategory.ARTE_POPULAR -> Color(0xFFFF8A65)             // Naranja artístico
+        CulturalCategory.NATURALEZA_CULTURAL -> Color(0xFF26A69A)      // Verde azulado (naturaleza)
+        CulturalCategory.OTRO -> Color(0xFF9E9E9E)
     }
 }

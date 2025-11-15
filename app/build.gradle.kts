@@ -76,6 +76,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.text)
     implementation(libs.androidx.foundation)
+    implementation(libs.foundation)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.ui.text)
+    implementation(libs.androidx.compose.foundation.foundation)
     kapt("com.google.dagger:hilt-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 

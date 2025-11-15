@@ -2,7 +2,6 @@ package com.william.yachay_hco.di
 
 import com.william.yachay_hco.network.AuthService
 import com.william.yachay_hco.network.CulturalService
-import com.william.yachay_hco.network.OpenAIService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,22 +20,11 @@ object NetworkModule {
     @LocalApi
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://0be54624d063.ngrok-free.app")
+            .baseUrl(" https://e4471a3e17aa.ngrok-free.app")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    @Provides
-    @Singleton
-    @OpenAIApi
-    fun provideOpenAIRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("https://api.openai.com/v1/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
-    // CORRECCIÓN: Agregar @LocalApi para especificar qué Retrofit usar
     @Provides
     @Singleton
     fun provideAuthService(@LocalApi retrofit: Retrofit): AuthService {
@@ -47,12 +35,6 @@ object NetworkModule {
     @Singleton
     fun provideCulturalService(@LocalApi retrofit: Retrofit): CulturalService {
         return retrofit.create(CulturalService::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideOpenAIService(@OpenAIApi retrofit: Retrofit): OpenAIService {
-        return retrofit.create(OpenAIService::class.java)
     }
 }
 

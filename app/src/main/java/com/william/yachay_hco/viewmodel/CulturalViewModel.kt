@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,6 +31,8 @@ class CulturalViewModel @Inject constructor(
 
     private val _analysisResult = MutableStateFlow<CulturalItem?>(null)
     val analysisResult: StateFlow<CulturalItem?> = _analysisResult.asStateFlow()
+    private val _selectedCulturalItem = MutableStateFlow<CulturalItem?>(null)
+    val selectedCulturalItem: StateFlow<CulturalItem?> = _selectedCulturalItem.asStateFlow()
 
     init {
         loadCulturalItems()
@@ -45,47 +48,30 @@ class CulturalViewModel @Inject constructor(
                 analysisComplete = false
             )
 
-            try {
-                Log.d(TAG, "Enviando imagen al repositorio para análisis")
-                val result = culturalRepository.analyzeCulturalImage(imageBase64)
-
-                if (result != null) {
+            culturalRepository.analyzeCulturalImage(imageBase64).fold(
+                onSuccess = { result ->
                     Log.d(TAG, "Análisis exitoso: ${result.titulo}")
                     _analysisResult.value = result
                     _uiState.value = _uiState.value.copy(
                         isAnalyzing = false,
                         analysisComplete = true
                     )
-                } else {
-                    Log.e(TAG, "El análisis retornó null")
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Error en análisis: ${error.message}")
+                    val message = when (error) {
+                        is CulturalRepository.AnalysisError.RateLimitError -> error.message
+                        is CulturalRepository.AnalysisError.NotCulturalError -> error.message
+                        is CulturalRepository.AnalysisError.NetworkError -> error.message
+                        is CulturalRepository.AnalysisError.InvalidImageError -> error.message
+                        else -> "Error al analizar la imagen: ${error.message}"
+                    }
                     _uiState.value = _uiState.value.copy(
                         isAnalyzing = false,
-                        error = "No se pudo analizar la imagen. Inténtalo nuevamente."
+                        error = message
                     )
                 }
-
-            } catch (e: IllegalStateException) {
-                // Errores de validación (límite de tiempo, etc.)
-                Log.w(TAG, "Error de validación: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    isAnalyzing = false,
-                    error = e.message ?: "Error de validación"
-                )
-            } catch (e: IllegalArgumentException) {
-                // Errores de argumentos inválidos
-                Log.w(TAG, "Argumento inválido: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    isAnalyzing = false,
-                    error = e.message ?: "Imagen inválida"
-                )
-            } catch (e: Exception) {
-                // Otros errores
-                Log.e(TAG, "Error inesperado: ${e.message}", e)
-                _uiState.value = _uiState.value.copy(
-                    isAnalyzing = false,
-                    error = e.message ?: "Error inesperado al analizar la imagen"
-                )
-            }
+            )
         }
     }
 
@@ -93,27 +79,26 @@ class CulturalViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, error = null)
 
-            try {
-                Log.d(TAG, "Guardando elemento cultural: ${item.titulo}")
-                val savedItem = culturalRepository.saveCulturalItem(item)
+            culturalRepository.saveCulturalItem(item).fold(
+                onSuccess = { savedItem ->
+                    Log.d(TAG, "Elemento cultural guardado exitosamente")
+                    val updatedList = _culturalItems.value.toMutableList()
+                    updatedList.add(0, savedItem)
+                    _culturalItems.value = updatedList
 
-                // Actualizar la lista local
-                val updatedList = _culturalItems.value.toMutableList()
-                updatedList.add(0, savedItem)
-                _culturalItems.value = updatedList
-
-                Log.d(TAG, "Elemento cultural guardado exitosamente")
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    itemSaved = true
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error guardando elemento cultural: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    error = "Error al guardar: ${e.message}"
-                )
-            }
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        itemSaved = true
+                    )
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Error guardando elemento cultural: ${error.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        error = "No se pudo guardar el elemento: ${error.message}"
+                    )
+                }
+            )
         }
     }
 
@@ -121,18 +106,55 @@ class CulturalViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
+            culturalRepository.getCulturalItems(category).fold(
+                onSuccess = { items ->
+                    Log.d(TAG, "Cargados ${items.size} elementos culturales")
+                    _culturalItems.value = items
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Error cargando elementos culturales: ${error.message}")
+                    _culturalItems.value = emptyList()
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "No se pudieron cargar los elementos culturales"
+                    )
+                }
+            )
+        }
+    }
+
+    // Para obtener los items descubiertos por el usuario
+    fun loadUserCulturalItems() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            val result = culturalRepository.getUserCulturalItems()
+
+            result
+                .onSuccess { list ->
+                    _culturalItems.value = list
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = e.message
+                    )
+                }
+        }
+    }
+
+    fun loadCulturalItemDetail(itemId: Int) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
             try {
-                Log.d(TAG, "Cargando elementos culturales${if (category != null) " de categoría $category" else ""}")
-                val items = culturalRepository.getCulturalItems(category)
-                _culturalItems.value = items
-                _uiState.value = _uiState.value.copy(isLoading = false)
-                Log.d(TAG, "Cargados ${items.size} elementos culturales")
+                val item = culturalRepository.getCulturalItemDetail(itemId)
+                _selectedCulturalItem.value = item
             } catch (e: Exception) {
-                Log.e(TAG, "Error cargando elementos culturales: ${e.message}")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Error al cargar elementos: ${e.message}"
-                )
+                _uiState.update { it.copy(error = e.message) }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }

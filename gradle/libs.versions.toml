@@ -20,6 +20,10 @@ media3CommonKtx = "1.8.0"
 material3 = "1.4.0"
 uiTextVersion = "1.9.2"
 foundationVersion = "1.9.2"
+androidxFoundation = "1.9.3"
+uiGraphics = "1.9.3"
+androidxUiText = "1.9.3"
+androidxFoundationVersion = "1.9.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -57,6 +61,10 @@ androidx-media3-common-ktx = { group = "androidx.media3", name = "media3-common-
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiTextVersion" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" }
+foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxFoundation" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "androidxUiText" }
+androidx-compose-foundation-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxFoundationVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -2,19 +2,14 @@ package com.william.yachay_hco.repository
 
 import android.content.Context
 import android.util.Log
-import com.google.gson.Gson
-import com.william.yachay_hco.R
 import com.william.yachay_hco.model.*
-import com.william.yachay_hco.network.OpenAIService
 import com.william.yachay_hco.network.CulturalService
 import com.william.yachay_hco.utils.SharedPreferenceManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlin.random.Random
 
 class CulturalRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val openAIService: OpenAIService,
     private val culturalService: CulturalService,
     private val sharedPreferenceManager: SharedPreferenceManager
 ) {
@@ -23,228 +18,208 @@ class CulturalRepository @Inject constructor(
         private const val TAG = "CulturalRepository"
     }
 
-    data class CulturalAnalysisResult(
-        val titulo: String,
-        val categoria: String,
-        val confianza: Float,
-        val descripcion: String,
-        val contexto_cultural: String,
-        val periodo_historico: String,
-        val ubicacion: String,
-        val significado: String
-    )
+    sealed class AnalysisError : Exception() {
+        data class RateLimitError(
+            override val message: String = "Debes esperar 30 segundos entre análisis"
+        ) : AnalysisError()
 
-    suspend fun analyzeCulturalImage(imageBase64: String): CulturalItem? {
-        try {
-            Log.d(TAG, "Iniciando análisis de imagen cultural")
+        data class InvalidImageError(
+            override val message: String = "La imagen proporcionada es inválida"
+        ) : AnalysisError()
 
-            // 1. Obtener API key interna
-            val apiKey = getInternalApiKey()
+        data class NotCulturalError(
+            override val message: String = "La imagen no pertenece a la cultura huanuqueña"
+        ) : AnalysisError()
 
-            // 2. Verificar límite de análisis
-            if (!sharedPreferenceManager.canPerformAnalysis()) {
-                Log.w(TAG, "Análisis bloqueado por límite de tiempo")
-                throw IllegalStateException("Debes esperar 30 segundos entre análisis")
-            }
+        data class NetworkError(
+            override val message: String = "Error de conexión. Verifica tu internet"
+        ) : AnalysisError()
 
-            // 3. Validar imagen base64
-            if (imageBase64.isBlank()) {
-                Log.e(TAG, "Imagen base64 está vacía")
-                throw IllegalArgumentException("Imagen inválida")
-            }
+        data class ServerError(
+            override val message: String = "Error en el servidor. Intenta más tarde"
+        ) : AnalysisError()
 
-            Log.d(TAG, "Creando request para OpenAI")
-            val prompt = createHuanucoCulturalPrompt()
+        data class UnauthorizedError(
+            override val message: String = "Sesión expirada. Vuelve a iniciar sesión"
+        ) : AnalysisError()
 
-            val request = OpenAIVisionRequest(
-                messages = listOf(
-                    OpenAIMessage(
-                        role = "user",
-                        content = listOf(
-                            OpenAIContent(
-                                type = "text",
-                                text = prompt
-                            ),
-                            OpenAIContent(
-                                type = "image_url",
-                                image_url = OpenAIImageUrl(url = "data:image/jpeg;base64,$imageBase64")
-                            )
-                        )
-                    )
-                )
+        data class ImageTooLargeError(
+            override val message: String = "La imagen es demasiado grande (máx 10MB)"
+        ) : AnalysisError()
+    }
+
+    private fun validateImage(imageBase64: String) {
+        // Verificar que no esté vacía
+        if (imageBase64.isBlank()) {
+            throw AnalysisError.InvalidImageError("La imagen está vacía")
+        }
+
+        // Verificar tamaño (aproximado, base64 es ~33% más grande que original)
+        val sizeInBytes = (imageBase64.length * 3) / 4
+        val maxSizeInBytes = 10_000_000 // 10MB
+
+        if (sizeInBytes > maxSizeInBytes) {
+            throw AnalysisError.ImageTooLargeError(
+                "La imagen es muy grande (${sizeInBytes / 1_000_000}MB). Máximo 10MB"
             )
+        }
 
-            Log.d(TAG, "Enviando request a OpenAI")
-            val response = openAIService.analyzeImage(
-                authToken = "Bearer $apiKey",
-                request = request
-            )
-
-            Log.d(TAG, "Respuesta recibida de OpenAI: ${response.choices.firstOrNull()?.message?.content}")
-
-            // 4. Verificar que hay respuesta
-            if (response.choices.isEmpty()) {
-                Log.e(TAG, "OpenAI no retornó ninguna respuesta")
-                throw RuntimeException("OpenAI no pudo analizar la imagen")
-            }
-
-            val content = response.choices.first().message.content
-            if (content.isBlank()) {
-                Log.e(TAG, "Contenido de respuesta está vacío")
-                throw RuntimeException("OpenAI retornó respuesta vacía")
-            }
-
-            // 5. Parsear la respuesta JSON estructurada
-            Log.d(TAG, "Parseando respuesta JSON")
-            val analysisResult = parseOpenAIResponse(content)
-
-            // 6. Actualizar tiempo del último análisis
-            sharedPreferenceManager.saveLastAnalysisTime(System.currentTimeMillis())
-            sharedPreferenceManager.incrementAnalysisCount()
-
-            // 7. Convertir a CulturalItem
-            val culturalItem = CulturalItem(
-                imagen = imageBase64,
-                titulo = analysisResult.titulo,
-                categoria = mapStringToCategory(analysisResult.categoria),
-                confianza = analysisResult.confianza,
-                descripcion = analysisResult.descripcion,
-                contexto_cultural = analysisResult.contexto_cultural,
-                periodo_historico = analysisResult.periodo_historico,
-                ubicacion = analysisResult.ubicacion,
-                significado = analysisResult.significado
-            )
-
-            Log.d(TAG, "Análisis completado exitosamente: ${culturalItem.titulo}")
-            return culturalItem
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error en análisis de imagen: ${e.message}", e)
-            throw when (e) {
-                is IllegalStateException -> e
-                is IllegalArgumentException -> e
-                else -> RuntimeException("Error al comunicarse con OpenAI: ${e.message}")
-            }
+        // Opcional: verificar que sea base64 válido (verificación básica)
+        if (!imageBase64.matches(Regex("^[A-Za-z0-9+/]*={0,2}$"))) {
+            throw AnalysisError.InvalidImageError("Formato de imagen inválido")
         }
     }
 
-    private fun createHuanucoCulturalPrompt(): String {
-        return """
-            Analiza esta imagen y determina si representa algún elemento cultural de Huánuco, Perú. 
-            Categoriza entre: Gastronomía, Patrimonio Arqueológico, Flora Medicinal, o Leyendas y Tradiciones.
-            
-            Responde ÚNICAMENTE con un JSON válido en este formato exacto:
-            {
-                "titulo": "Nombre específico del elemento",
-                "categoria": "Una de las 4 categorías mencionadas",
-                "confianza": 0.85,
-                "descripcion": "Descripción detallada del elemento cultural",
-                "contexto_cultural": "Importancia cultural específica para Huánuco",
-                "periodo_historico": "Época o periodo histórico relevante",
-                "ubicacion": "Ubicación específica en Huánuco donde se encuentra/practica",
-                "significado": "Significado cultural y simbólico para la comunidad huanuqueña"
-            }
-            
-            Si no puedes identificar el elemento como parte de la cultura huanuqueña, usa confianza menor a 0.3 y especifica por qué no es reconocible como elemento cultural de Huánuco.
-        """.trimIndent()
+    private fun getAuthToken(): String {
+        val token = sharedPreferenceManager.getAuthToken()
+        if (token.isNullOrBlank()) {
+            throw AnalysisError.UnauthorizedError("No hay sesión activa")
+        }
+        return "Token $token" // Formato: "Token abc123..."
     }
 
-    private fun parseOpenAIResponse(content: String): CulturalAnalysisResult {
-        return try {
-            Log.d(TAG, "Intentando parsear JSON: $content")
-            val cleanContent = cleanJsonResponse(content)
-            Log.d(TAG, "JSON limpio: $cleanContent")
+    private fun parseError(response: ApiResponse<CulturalItem>): AnalysisError {
+        val errorMessage = response.message ?: "Error desconocido"
 
-            val gson = Gson()
-            val result = gson.fromJson(cleanContent, CulturalAnalysisResult::class.java)
-
-            if (result.titulo.isBlank()) {
-                throw IllegalStateException("Título vacío en respuesta de OpenAI")
+        return when {
+            // Errores específicos basados en el mensaje del backend
+            errorMessage.contains("rate limit", ignoreCase = true) ||
+                    errorMessage.contains("esperar", ignoreCase = true) -> {
+                AnalysisError.RateLimitError(errorMessage)
             }
 
-            Log.d(TAG, "JSON parseado exitosamente")
-            return result
+            errorMessage.contains("no pertenece", ignoreCase = true) ||
+                    errorMessage.contains("no cultural", ignoreCase = true) ||
+                    errorMessage.contains("confianza", ignoreCase = true) -> {
+                AnalysisError.NotCulturalError(errorMessage)
+            }
 
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parseando JSON de OpenAI: ${e.message}", e)
-            Log.e(TAG, "Contenido problemático: $content")
-            throw RuntimeException("OpenAI retornó un formato inválido: ${e.message}")
-        }
-    }
+            errorMessage.contains("inválida", ignoreCase = true) ||
+                    errorMessage.contains("formato", ignoreCase = true) -> {
+                AnalysisError.InvalidImageError(errorMessage)
+            }
 
-    private fun cleanJsonResponse(content: String): String {
-        val jsonStart = content.indexOf("{")
-        val jsonEnd = content.lastIndexOf("}") + 1
+            errorMessage.contains("sesión", ignoreCase = true) ||
+                    errorMessage.contains("autenticación", ignoreCase = true) -> {
+                AnalysisError.UnauthorizedError(errorMessage)
+            }
 
-        return if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
-            content.substring(jsonStart, jsonEnd)
-        } else {
-            content.trim()
-        }
-    }
-
-    private fun mapStringToCategory(categoryString: String): CulturalCategory {
-        return when (categoryString.lowercase().trim()) {
-            "gastronomía", "gastronomia" -> CulturalCategory.GASTRONOMIA
-            "patrimonio arqueológico", "patrimonio arqueologico" -> CulturalCategory.PATRIMONIO_ARQUEOLOGICO
-            "flora medicinal" -> CulturalCategory.FLORA_MEDICINAL
-            "leyendas y tradiciones" -> CulturalCategory.LEYENDAS_Y_TRADICIONES
             else -> {
-                Log.w(TAG, "Categoría no reconocida: $categoryString, usando GASTRONOMIA por defecto")
-                CulturalCategory.GASTRONOMIA
+                AnalysisError.ServerError(errorMessage)
             }
         }
     }
 
-    /**
-     * Obtiene la API key interna desde los recursos de la aplicación
-     */
-    private fun getInternalApiKey(): String {
-        return context.getString(R.string.openai_api_key)
-    }
+    private fun handleNetworkError(exception: Exception): AnalysisError {
+        return when (exception) {
+            is AnalysisError -> {
+                // Si ya es un AnalysisError, retornarlo tal cual
+                exception
+            }
 
-    suspend fun saveCulturalItem(item: CulturalItem): CulturalItem {
-        return try {
-            culturalService.saveCulturalItem(item)
-        } catch (e: Exception) {
-            item.copy(id = Random.nextInt(1000))
+            is java.net.UnknownHostException -> {
+                AnalysisError.NetworkError("Sin conexión a internet. Verifica tu red")
+            }
+
+            is java.net.SocketTimeoutException -> {
+                AnalysisError.NetworkError("La conexión tardó demasiado. Intenta de nuevo")
+            }
+
+            is java.net.ConnectException -> {
+                AnalysisError.NetworkError("No se pudo conectar al servidor")
+            }
+
+            is retrofit2.HttpException -> {
+                when (exception.code()) {
+                    401 -> AnalysisError.UnauthorizedError("Sesión expirada. Inicia sesión nuevamente")
+                    429 -> AnalysisError.RateLimitError("Has excedido el límite de análisis. Espera un momento")
+                    500, 502, 503, 504 -> AnalysisError.ServerError("El servidor está teniendo problemas. Intenta más tarde")
+                    else -> AnalysisError.ServerError("Error del servidor (código ${exception.code()})")
+                }
+            }
+
+            else -> {
+                AnalysisError.ServerError("Error inesperado: ${exception.message}")
+            }
         }
     }
 
-    suspend fun getCulturalItems(category: CulturalCategory? = null): List<CulturalItem> {
+    suspend fun analyzeCulturalImage(imageBase64: String): Result<CulturalItem> {
         return try {
-            culturalService.getCulturalItems(category?.name)
+            validateImage(imageBase64)
+
+            val authToken = getAuthToken() // ✅ Aquí obtienes el token
+            val request = CulturalAnalysisRequest(image = imageBase64)
+            val response = culturalService.analyzeImage(authToken, request)
+
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                Result.failure(parseError(response))
+            }
+        } catch (e: AnalysisError) {
+            Log.e(TAG, "Error de análisis: ${e.message}")
+            Result.failure(e)
         } catch (e: Exception) {
-            createMockCulturalItems()
+            Log.e(TAG, "Error inesperado: ${e.message}", e)
+            Result.failure(handleNetworkError(e))
         }
     }
 
-    private fun createMockCulturalItems(): List<CulturalItem> {
-        return listOf(
-            CulturalItem(
-                id = 1,
-                titulo = "Pachamanca Huanuqueña",
-                categoria = CulturalCategory.GASTRONOMIA,
-                confianza = 0.95f,
-                descripcion = "Plato tradicional que se cocina bajo tierra usando piedras calientes",
-                contexto_cultural = "Ritual gastronómico ancestral que fortalece vínculos comunitarios",
-                periodo_historico = "Época preinca - actualidad",
-                ubicacion = "Toda la región de Huánuco",
-                significado = "Símbolo de unión familiar y respeto a la Pachamama",
-                imagen = "",
-            ),
-            CulturalItem(
-                id = 2,
-                titulo = "Templo de las Manos Cruzadas - Kotosh",
-                categoria = CulturalCategory.PATRIMONIO_ARQUEOLOGICO,
-                confianza = 0.98f,
-                descripcion = "Uno de los templos más antiguos de América",
-                contexto_cultural = "Evidencia de las primeras tradiciones arquitectónicas y religiosas",
-                periodo_historico = "2000 a.C. - 500 a.C.",
-                ubicacion = "Distrito de Kotosh, Huánuco",
-                significado = "Origen de la tradición arquitectónica ceremonial andina",
-                imagen = "",
-            )
-        )
+    suspend fun saveCulturalItem(item: CulturalItem): Result<CulturalItem> {
+        return try {
+            val token = sharedPreferenceManager.getAuthToken() ?: ""
+            val response = culturalService.saveCulturalItem("Token $token", item)
+            if (response.success && response.data != null) {  // ← Agregar && response.data != null
+                Result.success(response.data)  // ← Ahora es no-nullable
+            } else {
+                Result.failure(Exception(response.message ?: "Error desconocido"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error guardando item cultural: ${e.message}", e)
+            Result.failure(Exception("No se pudo guardar el elemento cultural: ${e.message}"))
+        }
     }
+
+    suspend fun getCulturalItems(category: CulturalCategory? = null): Result<List<CulturalItem>> {
+        return try {
+            val token = sharedPreferenceManager.getAuthToken() ?: ""
+            val response = culturalService.getCulturalItems("Token $token", category?.name)
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                Result.failure(Exception("Error al obtener items"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error obteniendo items culturales: ${e.message}", e)
+            Result.failure(Exception("No se pudieron obtener los elementos culturales: ${e.message}"))
+        }
+    }
+
+    suspend fun getCulturalItemDetail(itemId: Int): CulturalItem {
+        val response = culturalService.getCulturalItemDetail("", itemId)
+
+        if (response.success && response.data != null) {
+            return response.data
+        } else {
+            throw Exception(response.message ?: "Error al obtener el detalle")
+        }
+    }
+
+    suspend fun getUserCulturalItems(): Result<List<CulturalItem>> {
+        return try {
+            val token = sharedPreferenceManager.getAuthToken() ?: ""
+            val response = culturalService.getMyCulturalItems("Token $token")
+
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                Result.failure(Exception(response.message ?: "Error al obtener tus elementos culturales"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error obteniendo tus items culturales: ${e.message}", e)
+            Result.failure(Exception("No se pudieron obtener tus elementos culturales: ${e.message}"))
+        }
+    }
+
 }
