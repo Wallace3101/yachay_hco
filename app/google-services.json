@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "843175457681",
+    "project_id": "yachayhco",
+    "storage_bucket": "yachayhco.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843175457681:android:e96d164d9214d4b0d32030",
+        "android_client_info": {
+          "package_name": "com.william.yachay_hco"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "843175457681-40dmnjhht1h412k2d7am6e1ev703ouo9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.william.yachay_hco",
+            "certificate_hash": "f7d3c588cab1bb7b4a091bcbd55d83ebf3c07a22"
+          }
+        },
+        {
+          "client_id": "843175457681-uiduste02lnvqkjtl4ab2nfbo0ouhd19.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.william.yachay_hco",
+            "certificate_hash": "172acdf3379763240983e0e18f1177b05b5a163d"
+          }
+        },
+        {
+          "client_id": "843175457681-72igoc2hfp7u4kkccqptul6uk3p47s1a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb0a9C1qagcGFcapcXA8efiP-KGKmA2TQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "843175457681-72igoc2hfp7u4kkccqptul6uk3p47s1a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
