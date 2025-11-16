@@ -67,10 +67,3 @@ fun loadBitmapFromUri(context: Context, uri: Uri, maxWidth: Int = 1024, maxHeigh
         null
     }
 }
-
-/**
- * Extensión para convertir Bitmap a ImageBitmap de Compose
- */
-fun Bitmap.toImageBitmap(): ImageBitmap {
-    return this.asImageBitmap()
-}
