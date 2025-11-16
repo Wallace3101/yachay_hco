@@ -13,8 +13,8 @@ import com.william.yachay_hco.model.CulturalItem
 import com.william.yachay_hco.ui.screens.*
 import com.william.yachay_hco.ui.screens.cultural_analysis_screen.CulturalAnalysisScreen
 import com.william.yachay_hco.view.compose.auth.LoginScreen
-import com.william.yachay_hco.view.compose.profile.ProfileScreen
 import com.william.yachay_hco.view.compose.profile.SuccessScreen
+import com.william.yachay_hco.view.compose.profile.profile_screen.ProfileScreen
 
 @Composable
 fun YachayNavigation(navController: NavHostController) {
