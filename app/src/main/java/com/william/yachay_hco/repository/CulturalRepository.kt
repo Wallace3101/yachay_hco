@@ -148,14 +148,31 @@ class CulturalRepository @Inject constructor(
         return try {
             validateImage(imageBase64)
 
-            val authToken = getAuthToken() // ✅ Aquí obtienes el token
+            val authToken = getAuthToken()
             val request = CulturalAnalysisRequest(image = imageBase64)
             val response = culturalService.analyzeImage(authToken, request)
 
-            if (response.success) {
-                Result.success(response.data)
-            } else {
-                Result.failure(parseError(response))
+            Log.d(TAG, "analyzeImage response: success=${response.success}, data=${response.data}, message=${response.message}")
+
+            when {
+                response.success && response.data != null -> {
+                    // ✅ Caso bueno: hay item cultural
+                    Result.success(response.data)
+                }
+
+                response.success && response.data == null -> {
+                    // ⚠️ El backend dice "success" pero no manda data
+                    Result.failure(
+                        AnalysisError.NotCulturalError(
+                            response.message ?: "No se encontró un elemento cultural en la imagen"
+                        )
+                    )
+                }
+
+                else -> {
+                    // ❌ Caso de error declarado por el backend
+                    Result.failure(parseError(response))
+                }
             }
         } catch (e: AnalysisError) {
             Log.e(TAG, "Error de análisis: ${e.message}")

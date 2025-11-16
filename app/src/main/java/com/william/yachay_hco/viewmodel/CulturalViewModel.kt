@@ -50,8 +50,20 @@ class CulturalViewModel @Inject constructor(
 
             culturalRepository.analyzeCulturalImage(imageBase64).fold(
                 onSuccess = { result ->
+                    if (result == null) {
+                        Log.e(TAG, "Análisis exitoso pero sin resultado (null)")
+                        _analysisResult.value = null
+                        _uiState.value = _uiState.value.copy(
+                            isAnalyzing = false,
+                            analysisComplete = false,
+                            error = "No se pudo reconocer un elemento cultural en la imagen"
+                        )
+                        return@fold
+                    }
+
                     Log.d(TAG, "Análisis exitoso: ${result.titulo}")
-                    _analysisResult.value = result
+                    val enriched = result.copy(imagen = imageBase64)
+                    _analysisResult.value = enriched
                     _uiState.value = _uiState.value.copy(
                         isAnalyzing = false,
                         analysisComplete = true

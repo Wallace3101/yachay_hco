@@ -3,7 +3,8 @@ package com.william.yachay_hco.model
 
 data class CulturalItem(
     val id: Int? = null,
-    val imagen: String?,                    // URL o base64 de la imagen
+    val imagen: String?,
+    val imagen_base64: String?,
     val titulo: String,
     val categoria: CulturalCategory,
     val confianza: Float,                  // 0.0 a 1.0
@@ -14,7 +15,7 @@ data class CulturalItem(
     val significado: String,
     val created_at: String? = null,
     val updated_at: String? = null,
-    val created_by_id: String? = null,
+    val created_by: Int? = null,
 )
 
 enum class CulturalCategory(val displayName: String) {

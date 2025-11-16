@@ -74,12 +74,12 @@ fun ProfileScreen(
     LaunchedEffect(culturalItems) {
         Log.d("ProfileScreen", "Cultural items loaded: ${culturalItems.size}")
         culturalItems.forEach { item ->
-            Log.d("ProfileScreen", "Item: ${item.titulo}, Created by: ${item.created_by_id}, Date: ${item.created_at}")
+            Log.d("ProfileScreen", "Item: ${item.titulo}, Created by: ${item.created_by}, Date: ${item.created_at}")
         }
     }
 
     Box(
-        modifier = Modifier
+        modifier = Modifier6
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(

@@ -20,7 +20,7 @@ object NetworkModule {
     @LocalApi
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(" https://e4471a3e17aa.ngrok-free.app")
+            .baseUrl("https://aa19aa157fa5.ngrok-free.app")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

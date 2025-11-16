@@ -730,7 +730,7 @@ private fun ModernAnalysisResultCard(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Guardar en Mi Colección",
+                        "Guardar en mi colección",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
