@@ -45,8 +45,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.william.yachay_hco.model.Report
 import com.william.yachay_hco.model.ReportStatus
-import com.william.yachay_hco.ui.screens.ReportDetailRow
-import com.william.yachay_hco.ui.screens.StatusChip
+import com.william.yachay_hco.ui.screens.report_screen.partes.ReportDetailRow
+import com.william.yachay_hco.ui.screens.report_screen.partes.StatusChip
 import com.william.yachay_hco.ui.theme.BlueYachay
 import com.william.yachay_hco.ui.theme.CreamYachay
 import com.william.yachay_hco.ui.theme.GreenYachay
