@@ -20,8 +20,8 @@ data class Report(
 
     // Estado y auditoría
     val status: ReportStatus = ReportStatus.PENDIENTE,
-    val createdAt: String? = null,
-    val updatedAt: String? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null,
     val reportedByEmail: String? = null,
     val reviewedByEmail: String? = null,
     val reviewed_at: String? = null,

@@ -139,7 +139,7 @@ fun AdminReportCard(
                 }
 
                 Text(
-                    text = formatDateReportAdmin(report.createdAt ?: ""),
+                    text = formatDateReportAdmin(report.created_at ?: ""),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )

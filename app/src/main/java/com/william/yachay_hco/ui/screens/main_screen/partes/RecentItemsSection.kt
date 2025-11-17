@@ -60,40 +60,53 @@ fun RecentCulturalItemsSection(
     isLoading: Boolean,
     onViewDetails: (Int) -> Unit
 ) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Recientes",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = BlueYachay
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp)
             )
-        }
+            .padding(16.dp) // Padding interno para el contenido
+    ) {
+        Column {
+            // Header con mejor contraste
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Recientes",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = BlueYachay
+                )
+            }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        when {
-            isLoading -> {
-                repeat(3) {
-                    LoadingItemCard()
-                    Spacer(modifier = Modifier.height(12.dp))
+            when {
+                isLoading -> {
+                    repeat(3) {
+                        LoadingItemCard()
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
-            }
-            culturalItems.isEmpty() -> {
-                EmptyStateCard()
-            }
-            else -> {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    culturalItems.forEach { item ->
-                        Log.d("RecentItems", "Item: ${item.titulo}, ID: ${item.id}")
-                        ModernCulturalItemCard(
-                            culturalItem = item,
-                            onViewDetails = onViewDetails
-                        )
+                culturalItems.isEmpty() -> {
+                    EmptyStateCard()
+                }
+                else -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        culturalItems.forEach { item ->
+                            Log.d("RecentItems", "Item: ${item.titulo}, ID: ${item.id}")
+                            ModernCulturalItemCard(
+                                culturalItem = item,
+                                onViewDetails = onViewDetails
+                            )
+                        }
                     }
                 }
             }

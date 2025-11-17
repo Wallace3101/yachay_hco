@@ -44,6 +44,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -125,7 +126,6 @@ fun CreateReportTab(viewModel: ReportViewModel) {
                 significado = ""
                 selectedImageUri = null
                 selectedImageBitmap = null
-
                 viewModel.resetCreateReportState()
             }
             else -> {}
@@ -135,318 +135,256 @@ fun CreateReportTab(viewModel: ReportViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header compacto
             item {
-                // Header del formulario
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = BlueYachay
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.shadow(8.dp, RoundedCornerShape(20.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    BlueYachay.copy(alpha = 0.1f),
+                                    GreenYachay.copy(alpha = 0.1f)
+                                )
+                            ),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .size(40.dp)
+                            .background(BlueYachay.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Create,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                "Nuevo Reporte",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Text(
-                                "Completa el formulario",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Create,
+                            contentDescription = null,
+                            tint = BlueYachay,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            "Nuevo Reporte",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50),
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            "Completa la información",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF78909C),
+                            fontSize = 13.sp
+                        )
                     }
                 }
             }
 
+            // Tipo de Reporte
             item {
-                // Tipo de Reporte
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.shadow(4.dp, RoundedCornerShape(16.dp))
+                CompactDropdownField(
+                    label = "Tipo de Reporte",
+                    value = if (reportType == "CORRECCION") "Corrección de análisis" else "Nuevo elemento cultural",
+                    icon = Icons.Default.Assignment,
+                    iconColor = BlueYachay,
+                    expanded = showReportTypeDropdown,
+                    onExpandedChange = { showReportTypeDropdown = it }
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Assignment,
-                                contentDescription = null,
-                                tint = BlueYachay,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Tipo de Reporte",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = BlueYachay
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        ExposedDropdownMenuBox(
-                            expanded = showReportTypeDropdown,
-                            onExpandedChange = { showReportTypeDropdown = it }
-                        ) {
-                            OutlinedTextField(
-                                value = if (reportType == "CORRECCION") "Corrección de análisis" else "Nuevo elemento cultural",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Selecciona el tipo") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showReportTypeDropdown) },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueYachay,
-                                    focusedLabelColor = BlueYachay,
-                                    unfocusedBorderColor = Color.LightGray
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = showReportTypeDropdown,
-                                onDismissRequest = { showReportTypeDropdown = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Corrección de análisis") },
-                                    onClick = {
-                                        reportType = "CORRECCION"
-                                        showReportTypeDropdown = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.Edit, null, tint = BlueYachay)
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Nuevo elemento cultural") },
-                                    onClick = {
-                                        reportType = "NUEVO_ELEMENTO"
-                                        showReportTypeDropdown = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.AddCircle, null, tint = GreenYachay)
-                                    }
-                                )
+                    DropdownMenu(
+                        expanded = showReportTypeDropdown,
+                        onDismissRequest = { showReportTypeDropdown = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Corrección de análisis") },
+                            onClick = {
+                                reportType = "CORRECCION"
+                                showReportTypeDropdown = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, null, tint = BlueYachay)
                             }
-                        }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Nuevo elemento cultural") },
+                            onClick = {
+                                reportType = "NUEVO_ELEMENTO"
+                                showReportTypeDropdown = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.AddCircle, null, tint = GreenYachay)
+                            }
+                        )
                     }
                 }
             }
 
+            // Título
             item {
-                ModernTextField(
-                    value = motivo,
-                    onValueChange = { motivo = it },
-                    label = "Motivo del reporte",
-                    placeholder = "Explica por qué reportas este elemento",
-                    icon = Icons.Default.Description,
-                    minLines = 3,
-                    required = true
-                )
-            }
-
-            item {
-                ModernTextField(
+                CompactTextField(
                     value = titulo,
                     onValueChange = { titulo = it },
                     label = "Título",
                     placeholder = "Ej: Pachamanca Huanuqueña",
                     icon = Icons.Default.Title,
-                    required = true
+                    iconColor = BlueYachay
                 )
             }
 
+            // Categoría
             item {
-                // Categoría
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.shadow(4.dp, RoundedCornerShape(16.dp))
+                CompactDropdownField(
+                    label = "Categoría",
+                    value = getCategoryDisplay(categoria),
+                    icon = Icons.Default.Category,
+                    iconColor = GreenYachay,
+                    expanded = showCategoryDropdown,
+                    onExpandedChange = { showCategoryDropdown = it }
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Category,
-                                contentDescription = null,
-                                tint = GreenYachay,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Categoría",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = GreenYachay
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        ExposedDropdownMenuBox(
-                            expanded = showCategoryDropdown,
-                            onExpandedChange = { showCategoryDropdown = it }
-                        ) {
-                            OutlinedTextField(
-                                value = getCategoryDisplay(categoria),
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Selecciona una categoría") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryDropdown) },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenYachay,
-                                    focusedLabelColor = GreenYachay,
-                                    unfocusedBorderColor = Color.LightGray
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = showCategoryDropdown,
-                                onDismissRequest = { showCategoryDropdown = false }
-                            ) {
-                                val categories = listOf(
-                                    "GASTRONOMIA" to "Gastronomía",
-                                    "PATRIMONIO_ARQUEOLOGICO" to "Patrimonio Arqueológico",
-                                    "FLORA_MEDICINAL" to "Flora Medicinal",
-                                    "LEYENDAS_Y_TRADICIONES" to "Leyendas y Tradiciones",
-                                    "FESTIVIDADES" to "Festividades",
-                                    "DANZA" to "Danza",
-                                    "MUSICA" to "Música",
-                                    "VESTIMENTA" to "Vestimenta",
-                                    "ARTE_POPULAR" to "Arte Popular",
-                                    "NATURALEZA_CULTURAL" to "Naturaleza/Cultural",
-                                    "OTRO" to "Otro"
-                                )
-                                categories.forEach { (value, display) ->
-                                    DropdownMenuItem(
-                                        text = { Text(display) },
-                                        onClick = {
-                                            categoria = value
-                                            showCategoryDropdown = false
-                                        }
-                                    )
+                    DropdownMenu(
+                        expanded = showCategoryDropdown,
+                        onDismissRequest = { showCategoryDropdown = false }
+                    ) {
+                        val categories = listOf(
+                            "GASTRONOMIA" to "Gastronomía",
+                            "PATRIMONIO_ARQUEOLOGICO" to "Patrimonio Arqueológico",
+                            "FLORA_MEDICINAL" to "Flora Medicinal",
+                            "LEYENDAS_Y_TRADICIONES" to "Leyendas y Tradiciones",
+                            "FESTIVIDADES" to "Festividades",
+                            "DANZA" to "Danza",
+                            "MUSICA" to "Música",
+                            "VESTIMENTA" to "Vestimenta",
+                            "ARTE_POPULAR" to "Arte Popular",
+                            "NATURALEZA_CULTURAL" to "Naturaleza/Cultural",
+                            "OTRO" to "Otro"
+                        )
+                        categories.forEach { (value, display) ->
+                            DropdownMenuItem(
+                                text = { Text(display) },
+                                onClick = {
+                                    categoria = value
+                                    showCategoryDropdown = false
                                 }
-                            }
+                            )
                         }
                     }
                 }
             }
 
+            // Motivo
             item {
-                ModernTextField(
+                CompactTextField(
+                    value = motivo,
+                    onValueChange = { motivo = it },
+                    label = "Motivo del reporte",
+                    placeholder = "Explica por qué reportas este elemento",
+                    icon = Icons.Default.Description,
+                    iconColor = Color(0xFFFF7043),
+                    minLines = 2
+                )
+            }
+
+            // Descripción
+            item {
+                CompactTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
                     label = "Descripción",
                     placeholder = "Describe el elemento cultural",
                     icon = Icons.Default.Description,
-                    minLines = 3,
-                    required = true
+                    iconColor = Color(0xFF42A5F5),
+                    minLines = 2
                 )
             }
 
+            // Contexto Cultural
             item {
-                ModernTextField(
+                CompactTextField(
                     value = contextoCultural,
                     onValueChange = { contextoCultural = it },
                     label = "Contexto Cultural",
                     placeholder = "Contexto histórico y cultural",
                     icon = Icons.Default.Public,
-                    minLines = 3,
-                    required = true
+                    iconColor = Color(0xFF26A69A),
+                    minLines = 2
                 )
             }
 
+            // Período Histórico
             item {
-                ModernTextField(
+                CompactTextField(
                     value = periodoHistorico,
                     onValueChange = { periodoHistorico = it },
                     label = "Período Histórico",
                     placeholder = "Ej: Época prehispánica",
                     icon = Icons.Default.History,
-                    required = true
+                    iconColor = Color(0xFF8D6E63)
                 )
             }
 
+            // Ubicación
             item {
-                ModernTextField(
+                CompactTextField(
                     value = ubicacion,
                     onValueChange = { ubicacion = it },
                     label = "Ubicación",
                     placeholder = "Ej: Huánuco, Perú",
                     icon = Icons.Default.LocationOn,
-                    required = true
+                    iconColor = Color(0xFFE91E63)
                 )
             }
 
+            // Significado
             item {
-                ModernTextField(
+                CompactTextField(
                     value = significado,
                     onValueChange = { significado = it },
                     label = "Significado",
                     placeholder = "Significado cultural del elemento",
                     icon = Icons.Default.Lightbulb,
-                    minLines = 3,
-                    required = true
+                    iconColor = Color(0xFFFFC107),
+                    minLines = 2
                 )
             }
 
+            // Imagen
             item {
-                // Imagen
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.shadow(4.dp, RoundedCornerShape(16.dp))
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 Icons.Default.Image,
                                 contentDescription = null,
                                 tint = YellowYachay,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 "Imagen (Opcional)",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = YellowYachay
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF37474F),
+                                fontSize = 13.sp
                             )
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
 
                         if (selectedImageBitmap != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(220.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                    .height(160.dp),
+                                shape = RoundedCornerShape(10.dp)
                             ) {
                                 Box {
                                     AsyncImage(
@@ -455,20 +393,6 @@ fun CreateReportTab(viewModel: ReportViewModel) {
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )
-                                    // Overlay con botón de eliminar
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Black.copy(alpha = 0.3f),
-                                                        Color.Transparent,
-                                                        Color.Transparent
-                                                    )
-                                                )
-                                            )
-                                    )
                                     IconButton(
                                         onClick = {
                                             selectedImageUri = null
@@ -476,57 +400,77 @@ fun CreateReportTab(viewModel: ReportViewModel) {
                                         },
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
-                                            .padding(12.dp)
+                                            .padding(8.dp)
                                             .background(RedYachay, CircleShape)
-                                            .shadow(4.dp, CircleShape)
-                                            .size(40.dp)
+                                            .size(32.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
-                                            contentDescription = "Eliminar imagen",
-                                            tint = Color.White
+                                            contentDescription = "Eliminar",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
                                         )
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
                         }
 
+                        Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = { imagePickerLauncher.launch("image/*") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
+                                .height(44.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selectedImageBitmap == null)
-                                    YellowYachay else YellowYachay.copy(alpha = 0.7f)
+                                containerColor = YellowYachay.copy(alpha = 0.9f)
                             ),
-                            shape = RoundedCornerShape(14.dp),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 4.dp,
-                                pressedElevation = 8.dp
-                            )
+                            shape = RoundedCornerShape(10.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                         ) {
                             Icon(
                                 if (selectedImageBitmap == null) Icons.Default.AddAPhoto
                                 else Icons.Default.Image,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                if (selectedImageBitmap == null) "Seleccionar Imagen"
-                                else "Cambiar Imagen",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
+                                if (selectedImageBitmap == null) "Seleccionar" else "Cambiar",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
                             )
                         }
                     }
                 }
             }
 
+            // Mensajes de estado
             item {
-                // Botón de Enviar con diseño premium
+                when (createReportState) {
+                    is ReportViewModel.UiState.Success -> {
+                        CompactStatusCard(
+                            icon = Icons.Default.CheckCircle,
+                            iconColor = GreenYachay,
+                            title = "¡Éxito!",
+                            message = "Reporte enviado. Será revisado por un administrador.",
+                            backgroundColor = GreenYachay.copy(alpha = 0.1f)
+                        )
+                    }
+                    is ReportViewModel.UiState.Error -> {
+                        CompactStatusCard(
+                            icon = Icons.Default.Error,
+                            iconColor = RedYachay,
+                            title = "Error",
+                            message = (createReportState as ReportViewModel.UiState.Error).message,
+                            backgroundColor = RedYachay.copy(alpha = 0.1f)
+                        )
+                    }
+                    else -> {}
+                }
+            }
+
+            // Botón de Enviar
+            item {
                 Button(
                     onClick = {
                         if (validateForm(motivo, titulo, descripcion, contextoCultural, periodoHistorico, ubicacion, significado)) {
@@ -552,148 +496,222 @@ fun CreateReportTab(viewModel: ReportViewModel) {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp)
-                        .shadow(
-                            elevation = if (createReportState is ReportViewModel.UiState.Loading) 0.dp else 8.dp,
-                            shape = RoundedCornerShape(18.dp),
-                            spotColor = BlueYachay.copy(alpha = 0.5f)
-                        ),
+                        .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BlueYachay,
                         disabledContainerColor = BlueYachay.copy(alpha = 0.6f)
                     ),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 2.dp
+                    ),
                     enabled = createReportState !is ReportViewModel.UiState.Loading
                 ) {
                     if (createReportState is ReportViewModel.UiState.Loading) {
                         CircularProgressIndicator(
                             color = Color.White,
-                            modifier = Modifier.size(28.dp),
-                            strokeWidth = 3.dp
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             "Enviando...",
-                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
+                            fontSize = 15.sp
                         )
                     } else {
                         Icon(
                             Icons.Default.Send,
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             "Enviar Reporte",
-                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
+                            fontSize = 15.sp
                         )
                     }
                 }
             }
 
-            // Mensajes de estado con diseño mejorado
-            item {
-                when (createReportState) {
-                    is ReportViewModel.UiState.Success -> {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = GreenYachay.copy(alpha = 0.15f)
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(2.dp, GreenYachay.copy(alpha = 0.3f)),
-                            modifier = Modifier.shadow(4.dp, RoundedCornerShape(16.dp))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(GreenYachay.copy(alpha = 0.3f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = GreenYachay,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "¡Éxito!",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = GreenYachay,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        "Reporte enviado exitosamente. Será revisado por un administrador.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = GreenYachay.copy(alpha = 0.8f),
-                                        lineHeight = 18.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    is ReportViewModel.UiState.Error -> {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = RedYachay.copy(alpha = 0.15f)
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(2.dp, RedYachay.copy(alpha = 0.3f)),
-                            modifier = Modifier.shadow(4.dp, RoundedCornerShape(16.dp))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(RedYachay.copy(alpha = 0.3f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.Error,
-                                        contentDescription = null,
-                                        tint = RedYachay,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Error",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = RedYachay,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        (createReportState as ReportViewModel.UiState.Error).message,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = RedYachay.copy(alpha = 0.8f),
-                                        lineHeight = 18.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    else -> {}
-                }
+            // Espaciado final
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+    }
+}
+
+// Componentes reutilizables compactos
+@Composable
+private fun CompactTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color,
+    minLines: Int = 1
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF37474F),
+                    fontSize = 13.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = {
+                    Text(
+                        placeholder,
+                        fontSize = 13.sp,
+                        color = Color(0xFF90A4AE)
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = iconColor,
+                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedContainerColor = iconColor.copy(alpha = 0.03f),
+                    unfocusedContainerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+                minLines = minLines,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactDropdownField(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    content: @Composable () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF37474F),
+                    fontSize = 13.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = onExpandedChange
+            ) {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = iconColor,
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedContainerColor = iconColor.copy(alpha = 0.03f),
+                        unfocusedContainerColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)
+                )
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactStatusCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color,
+    title: String,
+    message: String,
+    backgroundColor: Color
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(iconColor.copy(alpha = 0.2f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = iconColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF37474F),
+                    lineHeight = 16.sp,
+                    fontSize = 12.sp
+                )
             }
         }
     }

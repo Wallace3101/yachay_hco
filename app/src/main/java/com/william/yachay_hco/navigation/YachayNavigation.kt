@@ -81,7 +81,6 @@ fun YachayNavigation(navController: NavHostController) {
             )
         }
 
-        // Pantalla de detalles culturales
         composable(
             route = "cultural_detail/{itemId}",
             arguments = listOf(navArgument("itemId") { type = NavType.IntType })

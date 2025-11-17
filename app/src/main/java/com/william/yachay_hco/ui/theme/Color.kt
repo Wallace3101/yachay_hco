@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 val RedYachay = Color(0xFFF20519)
 val BlueYachay = Color(0xFF0554F2)
 val GreenYachay = Color(0xFF038C5A)
+val BlackYachay = Color(0xFF1A1A1A)
 val CreamYachay = Color(0xFFF2EFC4)
 val YellowYachay = Color(0xFFF2B705)
 

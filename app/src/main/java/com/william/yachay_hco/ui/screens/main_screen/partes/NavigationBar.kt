@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.william.yachay_hco.ui.theme.BlueYachay
 import com.william.yachay_hco.ui.theme.GreenYachay
+import com.william.yachay_hco.ui.theme.RedYachay
 
 @Composable
 fun ModernNavigationBar(
@@ -73,17 +74,18 @@ fun ModernNavigationBar(
                     icon = Icons.Default.AdminPanelSettings,
                     label = "Admin",
                     isSelected = false,
-                    onClick = onNavigateToReports  // Navega a admin_reports
+                    onClick = onNavigateToReports,  // Navega a admin_reports
+                    tintColor = RedYachay,
                 )
             } else {
                 NavBarItem(
                     icon = Icons.Default.Report,
                     label = "Reportes",
                     isSelected = false,
-                    onClick = onNavigateToReports  // Navega a reports
+                    onClick = onNavigateToReports,  // Navega a reports
+                    tintColor = RedYachay,
                 )
             }
-
 
             // Botón central especial
             Box(
@@ -122,8 +124,12 @@ private fun NavBarItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    tintColor: Color? = null
 ) {
+    val iconColor = tintColor ?: (if (isSelected) BlueYachay else Color.Gray)
+    val textColor = tintColor ?: (if (isSelected) BlueYachay else Color.Gray)
+
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
@@ -134,7 +140,7 @@ private fun NavBarItem(
         Icon(
             icon,
             contentDescription = label,
-            tint = if (isSelected) BlueYachay else Color.Gray,
+            tint = iconColor,
             modifier = Modifier.size(24.dp)
         )
 
@@ -143,8 +149,8 @@ private fun NavBarItem(
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) BlueYachay else Color.Gray,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            color = textColor,
+            fontWeight = if (isSelected || tintColor != null) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
